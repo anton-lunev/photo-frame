@@ -1,11 +1,11 @@
 {
-  "name": "photo-frame",
-  "short_name": "photo-frame",
+  "name": "Photo Frame",
+  "short_name": "Photo Frame",
   "theme_color": "#111",
   "background_color": "#111",
   "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
+  "scope": "/photo-frame/",
+  "start_url": ".",
   "icons": [
     {
       "src": "assets/icons/icon-72x72.png",
