@@ -1,4 +1,5 @@
 import {Injectable, NgZone} from '@angular/core';
+import GoogleUser = gapi.auth2.GoogleUser;
 
 const API_KEY = 'AIzaSyAIQK28Qiunrin-aETeDiBMfhCmgVEoWa4';
 const CLIENT_ID = '672049703287-p1jo1sa0j9ui3lhip685c1kik8v7oc0d';
@@ -49,10 +50,10 @@ export class GapiService {
     } else {
       this.isAuthorized = false;
     }
-  };
+  }
 
-  signIn() {
-    this.googleAuth.signIn();
+  signIn(): Promise<GoogleUser> {
+    return this.googleAuth.signIn();
   }
 
   signOut() {

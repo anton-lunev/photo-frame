@@ -23,12 +23,21 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     await this.gapiService.loadClient();
+    if (!this.isAuthorized()) {
+      this.loading = false;
+      return;
+    }
+    this.initPhotoQueue();
+  }
+
+  private async initPhotoQueue() {
     await this.photoQueueService.initQueue();
 
     this.mediaItems = [this.photoQueueService.getPhoto(), this.photoQueueService.getPhoto()];
     this.activeItem = this.mediaItems[0];
     this.loading = false;
 
+    // TODO: check aspect ratio of photos and render it accordingly(animation for panorama, blurred background for vertical photos).
     setInterval(this.nextItem, 15000);
   }
 
@@ -37,10 +46,12 @@ export class AppComponent implements OnInit {
     setTimeout(() => {
       this.mediaItems = [this.mediaItems[1], this.photoQueueService.getPhoto()];
     }, 700);
-  };
+  }
 
-  signIn() {
-    this.gapiService.signIn();
+  async signIn() {
+    this.loading = true;
+    await this.gapiService.signIn();
+    this.initPhotoQueue();
   }
 
   @HostListener('document:fullscreenchange')

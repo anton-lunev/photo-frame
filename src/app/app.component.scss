@@ -7,6 +7,42 @@
   align-items: center;
 }
 
+.signin {
+  background: #fff;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  &__image {
+    width: 70vw;
+    margin-bottom: 40px;
+  }
+
+  &__button {
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    color: #1a73e8;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    padding: 13px 28px 13px 57px;
+    margin-bottom: 60px;
+    transition: all .1s;
+    background: url("../assets/logo_photos_24dp.svg") no-repeat 18px center;
+    background-size: 30px;
+
+    &:hover {
+      background-color: #f8fbff;
+      border-color: #cce0fc;
+    }
+  }
+}
+
 .images-container, .page {
   width: 100%;
   height: 100%;
@@ -50,10 +86,11 @@
 
 .album-info {
   position: absolute;
-  left: 10px;
+  left: 20px;
   bottom: 10px;
   display: flex;
   align-items: center;
+  text-decoration: none;
 
   &__photo {
     width: 70px;
@@ -67,7 +104,7 @@
   &__title {
     font-size: 20px;
     color: #fff;
-    margin-left: 15px;
+    margin-left: 18px;
     text-shadow: 1px 1px 5px #000;
   }
 }

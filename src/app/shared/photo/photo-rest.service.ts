@@ -7,15 +7,18 @@ import {Album, PhotosResponse} from './types';
 export class PhotoRestService {
   private baseUrl = 'https://photoslibrary.googleapis.com/v1';
 
-  getAlbums(): Promise<Album[]> {
+  getAlbums(pageToken?: string): Promise<Album[]> {
     return gapi.client.request({
       path: `${this.baseUrl}/albums`,
-      params: {pageSize: 50},
+      params: {pageSize: 50, pageToken: pageToken || null},
       method: 'GET',
-    }).then((response) => {
+    }).then(async (response) => {
       console.log(response);
-      // TODO: request all the pages.
-      return response.result.albums as Album[];
+      const res: Album[] = response.result.albums;
+      if (response.result.nextPageToken) {
+        res.concat(await this.getAlbums(response.result.nextPageToken));
+      }
+      return res;
     });
   }
 
