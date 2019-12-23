@@ -5,7 +5,7 @@
   "background_color": "#111",
   "display": "standalone",
   "scope": "/photo-frame/",
-  "start_url": ".",
+  "start_url": "/photo-frame/",
   "icons": [
     {
       "src": "assets/icons/icon-72x72.png",
