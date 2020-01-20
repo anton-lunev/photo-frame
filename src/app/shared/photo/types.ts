@@ -8,26 +8,18 @@ export interface Album {
 }
 
 export interface PhotoMetadata {
-  apertureFNumber: number;
+  apertureFNumber?: number;
   cameraMake: string;
   cameraModel: string;
-  focalLength: number;
-  isoEquivalent: number;
+  focalLength?: number;
+  isoEquivalent?: number;
 }
 
-export interface GoogleMediaPhoto {
-  apertureFNumber: number;
-  cameraMake: string;
-  cameraModel: string;
-  focalLength: number;
-  isoEquivalent: number;
-}
-
-export interface GoogleMediaMetadata {
+export interface MediaMetadata {
   creationTime: string;
   width: string;
   height: string;
-  photo: GoogleMediaPhoto;
+  photo: PhotoMetadata;
 }
 
 export interface PhotosResponse {
@@ -39,7 +31,7 @@ export interface Photo {
   baseUrl: string;
   filename: string;
   id: string;
-  mediaMetadata: any;
+  mediaMetadata: MediaMetadata;
   mimeType: string;
   productUrl: string;
 }

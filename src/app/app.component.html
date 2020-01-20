@@ -10,9 +10,10 @@
 
   <div class="images-container" *ngIf="isAuthorized()">
     <div class="image-container" [class.image-container__active]="item == activeItem" *ngFor="let item of mediaItems">
-      <img class="image"
+      <img class="image image--backdrop"
            src="{{item.photo.baseUrl}}=w{{item.photo.mediaMetadata.width}}-h{{item.photo.mediaMetadata.height}}" alt="">
-
+      <img class="image" [class.image--contain]="isContain(activeItem)"
+           src="{{item.photo.baseUrl}}=w{{item.photo.mediaMetadata.width}}-h{{item.photo.mediaMetadata.height}}" alt="">
     </div>
     <div class="image-overlay">
       <div class="info-panel">

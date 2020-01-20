@@ -66,6 +66,21 @@
   object-fit: cover;
   height: 100%;
   width: 100%;
+  position: relative;
+
+  &--contain {
+    object-fit: contain;
+  }
+
+  &--backdrop {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    filter: blur(80px);
+    object-fit: fill;
+  }
 }
 
 .image-overlay {
@@ -102,10 +117,10 @@
   }
 
   &__title {
-    font-size: 20px;
+    font-size: 70px;
     color: #fff;
+    font-weight: 100;
     margin-left: 18px;
-    text-shadow: 1px 1px 5px #000;
   }
 }
 
