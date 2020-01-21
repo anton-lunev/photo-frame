@@ -9,17 +9,20 @@
   </div>
 
   <div class="images-container" *ngIf="isAuthorized()">
-    <div class="image-container" [class.image-container__active]="item == activeItem" *ngFor="let item of mediaItems">
-      <img class="image image--backdrop"
-           src="{{item.photo.baseUrl}}=w{{item.photo.mediaMetadata.width}}-h{{item.photo.mediaMetadata.height}}" alt="">
-      <img class="image" [class.image--contain]="isContain(activeItem)"
-           src="{{item.photo.baseUrl}}=w{{item.photo.mediaMetadata.width}}-h{{item.photo.mediaMetadata.height}}" alt="">
+    <div class="image-container" [class.image-container__active]="item == activeItem" *ngFor="let item of items">
+      <img class="image image--backdrop" [src]="item.photoUrl" alt="image background">
+      <img class="image"
+           [class.image--contain]="isContainType(item)"
+           [src]="item.photoUrl"
+           (error)="onImageError(item)"
+           (load)="onImageLoad(item)"
+           alt="">
     </div>
     <div class="image-overlay">
       <div class="info-panel">
-        <a class="album-info" target="_blank" [href]="activeItem.album.productUrl">
-          <img class="album-info__photo" [src]="activeItem.album.coverPhotoBaseUrl" alt="album photo"/>
-          <span class="album-info__title">{{activeItem.album.title}}</span>
+        <a class="album-info" target="_blank" [href]="activeItem.mediaItem.album.productUrl">
+          <img class="album-info__photo" [src]="activeItem.mediaItem.album.coverPhotoBaseUrl" alt="album photo"/>
+          <span class="album-info__title">{{activeItem.mediaItem.album.title}}</span>
         </a>
 
         <button class="fullscreen" (click)="toggleFullScreen()">

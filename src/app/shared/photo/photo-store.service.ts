@@ -2,13 +2,12 @@ import {Injectable} from '@angular/core';
 import {PhotoRestService} from './photo-rest.service';
 import {MediaItem, Photo, StoreItem} from './types';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({providedIn: 'root'})
 export class PhotoStoreService {
   private storeItems: StoreItem[];
   private albumsPromise;
 
+  // TODO: Save albums and photos to persistent storage.
   constructor(private photoRestService: PhotoRestService) {
   }
 

@@ -2,12 +2,7 @@ import {Component, HostListener, OnInit} from '@angular/core';
 import {GapiService} from './shared/gapi/gapi.service';
 import {PhotoQueueService} from './shared/photo/photo-queue.service';
 import {MediaItem} from './shared/photo/types';
-
-enum RatioType {
-  default,
-  contain,
-  panorama
-}
+import {Deferred} from './shared/utils/deferred';
 
 @Component({
   selector: 'app-root',
@@ -15,13 +10,13 @@ enum RatioType {
   styleUrls: ['./app.component.scss', './spinner.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'photo-frame';
-  loading = true;
-  mediaItems: MediaItem[] = [];
-  activeItem: MediaItem;
-  ratioTypes = new Map<MediaItem, RatioType>();
-  windowRatio: number;
+  static interval = 20000;
 
+  loading = true;
+  items: DataItem[] = [];
+  activeItem: DataItem;
+  nextItemLoadStatus = new Deferred();
+  onlineStatus = new Deferred();
   isInFullscreen = false;
 
   constructor(private gapiService: GapiService, private photoQueueService: PhotoQueueService) {
@@ -35,32 +30,82 @@ export class AppComponent implements OnInit {
       this.loading = false;
       return;
     }
+    this.onlineStatus.resolve();
     this.initPhotoQueue();
   }
 
   private async initPhotoQueue() {
     await this.photoQueueService.initQueue();
 
-    this.mediaItems = [this.photoQueueService.getPhoto(), this.photoQueueService.getPhoto()];
-    this.activeItem = this.mediaItems[0];
-    this.updateRatioTypes();
+    this.items = [this.getNewPhoto(), this.getNewPhoto()];
+    this.activeItem = this.items[0];
     this.loading = false;
 
     // TODO: check aspect ratio of photos and render it accordingly(animation for panorama, blurred background for vertical photos).
-    setInterval(this.nextItem, 20000);
+    setTimeout(() => this.nextItem(), AppComponent.interval);
   }
 
-  nextItem = () => {
-    this.activeItem = this.mediaItems[1];
+  onImageLoad(item: DataItem) {
+    if (this.activeItem !== item) {
+      this.nextItemLoadStatus.resolve();
+    }
+  }
+
+  async onImageError(item: DataItem) {
+    await this.onlineStatus.promise;
+    if (this.activeItem === item) {
+      this.nextItem();
+    } else {
+      this.items = [this.items[0], this.getNewPhoto()];
+    }
+  }
+
+  isContainType = (item: DataItem): boolean => item.ratioType === RatioType.contain;
+
+  toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+
+  private async nextItem() {
+    await this.onlineStatus.promise;
+    await this.nextItemLoadStatus.promise;
+    this.activeItem = this.items[1];
     setTimeout(() => {
-      this.ratioTypes.delete(this.mediaItems[0]);
-      const newMediaItem = this.photoQueueService.getPhoto();
-      this.mediaItems = [this.mediaItems[1], newMediaItem];
-      this.ratioTypes.set(newMediaItem, this.getRatioType(newMediaItem));
+      this.items = [this.items[1], this.getNewPhoto()];
+      this.nextItemLoadStatus = new Deferred();
+      setTimeout(() => this.nextItem(), AppComponent.interval);
     }, 700);
   }
 
-  getRatioType(mediaItem: MediaItem) {
+  private getNewPhoto(): DataItem {
+    return this.dataItem(this.photoQueueService.getPhoto());
+  }
+
+  private dataItem = (mediaItem: MediaItem): DataItem => ({
+    mediaItem,
+    photoUrl: this.photoUrl(mediaItem),
+    ratioType: this.getRatioType(mediaItem)
+  })
+
+  private photoUrl({photo}: MediaItem): string {
+    return `${photo.baseUrl}=w${photo.mediaMetadata.width}-h${photo.mediaMetadata.height}`;
+  }
+
+  async signIn() {
+    this.loading = true;
+    await this.gapiService.signIn();
+    this.initPhotoQueue();
+  }
+
+  private get windowRatio() {
+    return window.innerWidth / window.innerHeight;
+  }
+
+  private getRatioType(mediaItem: MediaItem) {
     const {width, height} = mediaItem.photo.mediaMetadata;
     const photoRatio = +width / +height;
 
@@ -70,37 +115,40 @@ export class AppComponent implements OnInit {
     return RatioType.default;
   }
 
-  isContain(mediaItem: MediaItem): boolean {
-    return this.ratioTypes.get(mediaItem) === RatioType.contain;
-  }
-
-  async signIn() {
-    this.loading = true;
-    await this.gapiService.signIn();
-    this.initPhotoQueue();
+  private updateRatioTypes() {
+    this.items.forEach(item => item.ratioType = this.getRatioType(item.mediaItem));
   }
 
   @HostListener('window:resize')
-  onResize() {
+  private onResize() {
     this.updateRatioTypes();
   }
 
-  updateRatioTypes() {
-    const {innerHeight, innerWidth} = window;
-    this.windowRatio = innerWidth / innerHeight;
-    this.mediaItems.forEach(item => this.ratioTypes.set(item, this.getRatioType(item)));
-  }
-
   @HostListener('document:fullscreenchange')
-  onFullscreenchange() {
+  private onFullscreenchange() {
     this.isInFullscreen = !!document.fullscreenElement;
   }
 
-  toggleFullScreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
+  @HostListener('window:offline')
+  private onOffline() {
+    this.onlineStatus = new Deferred();
   }
+
+  @HostListener('window:online')
+  private onOnline() {
+    this.onlineStatus.resolve();
+  }
+}
+
+enum RatioType {
+  default,
+  contain,
+  panorama
+}
+
+interface DataItem {
+  mediaItem: MediaItem;
+  photoUrl: string;
+  ratioType: RatioType;
+  loaded?: boolean;
 }
