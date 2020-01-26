@@ -14,9 +14,9 @@ export class PhotoRestService {
       method: 'GET',
     }).then(async (response) => {
       console.log(response);
-      const res: Album[] = response.result.albums;
+      let res: Album[] = response.result.albums;
       if (response.result.nextPageToken) {
-        res.concat(await this.getAlbums(response.result.nextPageToken));
+        res = res.concat(await this.getAlbums(response.result.nextPageToken));
       }
       return res;
     });

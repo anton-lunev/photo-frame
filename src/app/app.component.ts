@@ -78,7 +78,7 @@ export class AppComponent implements OnInit {
       this.items = [this.items[1], this.getNewPhoto()];
       this.nextItemLoadStatus = new Deferred();
       setTimeout(() => this.nextItem(), AppComponent.interval);
-    }, 700);
+    }, 900);
   }
 
   private getNewPhoto(): DataItem {
@@ -89,9 +89,13 @@ export class AppComponent implements OnInit {
     mediaItem,
     photoUrl: this.photoUrl(mediaItem),
     ratioType: this.getRatioType(mediaItem)
-  })
+  });
 
-  private photoUrl({photo}: MediaItem): string {
+  private photoUrl(mediaItem: MediaItem): string {
+    if (!mediaItem) {
+      return;
+    }
+    const {photo} = mediaItem;
     return `${photo.baseUrl}=w${photo.mediaMetadata.width}-h${photo.mediaMetadata.height}`;
   }
 

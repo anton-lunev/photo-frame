@@ -1,14 +1,14 @@
 import {Injectable} from '@angular/core';
 import {PhotoRestService} from './photo-rest.service';
-import {MediaItem, Photo, StoreItem} from './types';
+import {PhotoStorageService} from './photo-storage.service';
+import {Album, MediaItem, Photo, StoreItem} from './types';
 
 @Injectable({providedIn: 'root'})
 export class PhotoStoreService {
-  private storeItems: StoreItem[];
+  private storeItems: StoreItem[] = [];
   private albumsPromise;
 
-  // TODO: Save albums and photos to persistent storage.
-  constructor(private photoRestService: PhotoRestService) {
+  constructor(private photoRestService: PhotoRestService, private storageService: PhotoStorageService) {
   }
 
   /**
@@ -39,20 +39,37 @@ export class PhotoStoreService {
     if (this.albumsPromise) {
       return this.albumsPromise;
     }
-    this.albumsPromise = this.photoRestService.getAlbums();
-    const albums = await this.albumsPromise;
 
-    this.storeItems = albums.map(album => ({
+    let albums = this.storageService.getAlbums();
+    if (albums) {
+      // Continue immediately but update store with new albums later.
+      this.albumsPromise = Promise.resolve();
+      this.photoRestService.getAlbums().then(_albums => this.updateStoreWithAlbums(_albums));
+    } else {
+      // Wait for albums fetching.
+      this.albumsPromise = this.photoRestService.getAlbums();
+      albums = await this.albumsPromise;
+    }
+    this.updateStoreWithAlbums(albums);
+  }
+
+  private updateStoreWithAlbums(albums: Album[]) {
+    if (albums.length === this.storeItems.length) {
+      return;
+    }
+    this.storageService.set(this.storageService.albumsKey, albums);
+
+    const ids = this.storeItems.reduce((set, item) => set.add(item.id), new Set());
+    const newStoreItems = albums.filter(album => !ids.has(album.id)).map(album => ({
       id: album.id,
       album,
       photos: [],
       nextPageToken: null
     }));
+    this.storeItems = this.storeItems.concat(newStoreItems);
   }
 
-  /**
-   * Downloads photos for given store item.
-   */
+  /** Downloads photos for given {storeItem}. */
   private async populatePhotosToStoreItem(storeItem: StoreItem) {
     const result = await this.photoRestService.getAlbumPhotos(storeItem.id, storeItem.nextPageToken);
     storeItem.photos = storeItem.photos.concat(...result.mediaItems.filter(item => !item.mimeType.includes('video')));
