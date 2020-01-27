@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Album, PhotosResponse} from './types';
+import {Album, BatchPhotosResponse, PhotosResponse} from './types';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,19 @@ export class PhotoRestService {
       body: {
         albumId,
         pageSize: 100,
+      }
+    }).then((response) => {
+      console.log(response);
+      return response.result;
+    });
+  }
+
+  getPhotos(ids: string[]): Promise<BatchPhotosResponse> {
+    return gapi.client.request({
+      path: `${this.baseUrl}/mediaItems:batchGet`,
+      method: 'GET',
+      params: {
+        mediaItemIds: ids
       }
     }).then((response) => {
       console.log(response);

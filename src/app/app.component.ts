@@ -110,6 +110,9 @@ export class AppComponent implements OnInit {
   }
 
   private getRatioType(mediaItem: MediaItem) {
+    if (!mediaItem) {
+      return RatioType.default;
+    }
     const {width, height} = mediaItem.photo.mediaMetadata;
     const photoRatio = +width / +height;
 

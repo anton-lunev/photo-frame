@@ -20,7 +20,7 @@ export class PhotoStorageService {
     localStorage.clear();
   }
 
-  public getAlbumPhotos = (key: string): Photo[] | undefined => this.get(key) as Photo[];
+  public getAlbumPhotos = (key: string): string[] | undefined => this.get(key) as string[];
   public getAlbums = (): Album[] | undefined => this.get(this.albumsKey) as Album[];
 
   /** Performs the actual retrieval of a value from storage. */
@@ -29,7 +29,7 @@ export class PhotoStorageService {
   }
 
   /** Stores the provided value using specified key in the storage. */
-  public set(key: string, value: Album[] | Photo[]): void {
+  public set(key: string, value: Album[] | string[]): void {
     return localStorage.setItem(getKey(key), encode(value));
   }
 }

@@ -11,30 +11,33 @@ export class PhotoStoreService {
   constructor(private photoRestService: PhotoRestService, private storageService: PhotoStorageService) {
   }
 
-  /**
-   * Returns random media item.
-   */
+  /** Returns random media item. */
   async getMediaItem(): Promise<MediaItem> {
     await this.populateStore();
 
     const item = await this.getRandomItem();
-    return {
-      album: item.album,
-      photo: this.getRandomPhoto(item),
-    };
+    const photo = await this.getRandomPhoto(item);
+    return {album: item.album, photo};
   }
 
-  /**
-   * Returns random photo and removes it from given store item.
-   */
-  private getRandomPhoto(item: StoreItem): Photo {
+  /** Returns random photo and removes it from given store item. */
+  private async getRandomPhoto(item: StoreItem): Promise<Photo> {
+    if (!item.photos.length) {
+      this.populatePhotosToStoreItem(item);
+    }
     const index = this.getRandomIndex(item.photos.length - 1);
-    return item.photos.splice(index, 1)[0];
+    const id = item.photos.splice(index, 1)[0];
+    try {
+      const photos = await this.photoRestService.getPhotos([id, item.album.coverPhotoMediaItemId]);
+      // Update album cover since it could already expire.
+      item.album.coverPhotoBaseUrl = photos.mediaItemResults[1].mediaItem.baseUrl;
+      return photos.mediaItemResults[0].mediaItem;
+    } catch {
+      return this.getRandomPhoto(item);
+    }
   }
 
-  /**
-   * Downloads all albums and populates store items with them.
-   */
+  /** Downloads all albums and populates store items with them. */
   private async populateStore() {
     if (this.albumsPromise) {
       return this.albumsPromise;
@@ -59,27 +62,45 @@ export class PhotoStoreService {
     }
     this.storageService.set(this.storageService.albumsKey, albums);
 
-    const ids = this.storeItems.reduce((set, item) => set.add(item.id), new Set());
-    const newStoreItems = albums.filter(album => !ids.has(album.id)).map(album => ({
-      id: album.id,
-      album,
-      photos: [],
-      nextPageToken: null
-    }));
-    this.storeItems = this.storeItems.concat(newStoreItems);
+    const itemsMap = this.storeItems.reduce((map, item) => map.set(item.id, item), new Map());
+    albums.forEach(album => {
+      if (!itemsMap.has(album.id)) {
+        this.storeItems.push({id: album.id, album, photos: [], nextPageToken: null});
+      } else {
+        itemsMap.get(album.id).album = album;
+      }
+    });
   }
 
   /** Downloads photos for given {storeItem}. */
   private async populatePhotosToStoreItem(storeItem: StoreItem) {
+    const photos = this.storageService.getAlbumPhotos(storeItem.id);
+    if (photos) {
+      storeItem.photos = photos;
+      return;
+    }
+
+    // If photos are not in local storage wait for first page loading, and load the rest in background.
+    await this.loadAlbumPage(storeItem);
+    this.loadAllAlbumPhotos(storeItem);
+  }
+
+  private async loadAllAlbumPhotos(storeItem: StoreItem) {
+    while (storeItem.nextPageToken) {
+      await this.loadAlbumPage(storeItem);
+    }
+  }
+
+  private async loadAlbumPage(storeItem: StoreItem) {
     const result = await this.photoRestService.getAlbumPhotos(storeItem.id, storeItem.nextPageToken);
-    storeItem.photos = storeItem.photos.concat(...result.mediaItems.filter(item => !item.mimeType.includes('video')));
-    storeItem.nextPageToken = result.nextPageToken;
+    storeItem.photos = storeItem.photos.concat(...result.mediaItems.filter(item => !item.mimeType.includes('video')).map(item => item.id));
+    storeItem.nextPageToken = storeItem.nextPageToken === result.nextPageToken ? undefined : result.nextPageToken;
+    this.storageService.set(storeItem.id, storeItem.photos);
   }
 
   private async getRandomItem(): Promise<StoreItem> {
     const storeItem = this.storeItems[this.getRandomIndex()];
     if (!storeItem.photos.length) {
-      // TODO: maybe download randomly so that to show also photos from other pages.
       await this.populatePhotosToStoreItem(storeItem);
     }
     return storeItem;

@@ -27,6 +27,11 @@ export interface PhotosResponse {
   nextPageToken: string;
 }
 
+export interface BatchPhotosResponse {
+  mediaItemResults: { mediaItem: Photo }[];
+  nextPageToken: string;
+}
+
 export interface Photo {
   baseUrl: string;
   filename: string;
@@ -38,7 +43,7 @@ export interface Photo {
 
 export interface StoreItem {
   id: string;
-  photos: Photo[];
+  photos: string[];
   album: Album;
   nextPageToken: string;
 }
